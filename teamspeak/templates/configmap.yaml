@@ -1,3 +1,17 @@
+{{- if .Values.mariadb.enabled }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "teamspeak.mariadb.fullname" . }}-secret
+  labels:
+{{ include "teamspeak.labels" . | nindent 4 }}
+type: Opaque
+data:
+  mysql-root-password: {{ .Values.mariadb.auth.rootPassword | b64enc | quote }}
+  mysql-password: {{ .Values.mariadb.auth.password | b64enc | quote }}
+{{- end }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -5,17 +19,30 @@ metadata:
   labels:
 {{ include "teamspeak.labels" . | nindent 4 }}
 data:
-  tsserver.yaml: |
+  tsserver.yaml: |-
 {{ .Values.serverConfig | indent 4 }}
+{{ if .Values.mariadb.enabled }}
+    database:
+      type: "mariadb"
+      host: {{ include "teamspeak.mariadb.fullname" . }}
+      port: 3306
+      database: {{ .Values.mariadb.auth.database | quote }}
+      username: {{ .Values.mariadb.auth.username | quote }}
+      password: {{ .Values.mariadb.auth.password | quote }}
+{{ else }}
+    database:
+      type: "sqlite"
+      path: "/var/tsserver/database.db"
+{{ end }}
 ---
-{{- if .Values.mysql.enabled }}
+{{- if .Values.mariadb.enabled }}
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: {{ include "teamspeak.fullname" . }}-db-secret
+  name: {{ include "teamspeak.mariadb.fullname" . }}-config
   labels:
 {{ include "teamspeak.labels" . | nindent 4 }}
-type: Opaque
 data:
-  mysql-password: {{ .Values.mysql.auth.password | b64enc | quote }}
+  my.cnf: |-
+{{ .Values.mariadb.primary.configuration | indent 4 }}
 {{- end }}

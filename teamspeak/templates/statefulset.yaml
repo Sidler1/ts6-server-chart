@@ -45,23 +45,20 @@ spec:
           env:
             - name: TSSERVER_LICENSE_ACCEPTED
               value: "{{ ternary "accept" "reject" .Values.licenseAccepted | quote }}"
-            {{- if .Values.mysql.enabled }}
-            - name: MYSQL_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "teamspeak.fullname" . }}-mariadb
-                  key: root-password
+            {{- if .Values.mariadb.enabled }}
             - name: TSSERVER_DB_HOST
-              value: {{ include "teamspeak.fullname" . }}-mariadb
+              value: {{ include "teamspeak.mariadb.fullname" . }}
+            - name: TSSERVER_DB_PORT
+              value: "3306"
             - name: TSSERVER_DB_USER
-              value: {{ .Values.mysql.auth.username }}
+              value: {{ .Values.mariadb.auth.username }}
             - name: TSSERVER_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "teamspeak.fullname" . }}-db-secret
+                  name: {{ include "teamspeak.mariadb.fullname" . }}-secret
                   key: mysql-password
             - name: TSSERVER_DB_NAME
-              value: {{ .Values.mysql.auth.database }}
+              value: {{ .Values.mariadb.auth.database }}
             {{- end }}
           ports:
             - name: voice

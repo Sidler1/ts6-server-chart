@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "teamspeak.fullname" . }}-test-mariadb-db
+  labels:
+    {{- include "teamspeak.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  {{- if .Values.mariadb.enabled }}
+  template:
+    spec:
+      serviceAccountName: {{ include "teamspeak.serviceAccountName" . }}
+      containers:
+        - name: db-check
+          image: mariadb:11.5
+          command:
+            - /bin/sh
+          args:
+            - -c
+            - |
+              set -e
+              echo "Waiting for MariaDB to be ready..."
+              until mariadb-admin ping -h {{ include "teamspeak.mariadb.fullname" . }} -u {{ .Values.mariadb.auth.username }} -p{{ .Values.mariadb.auth.password }} --silent; do
+                sleep 2
+              done
+              echo "MariaDB is ready!"
+              # Test database access
+              mariadb -h {{ include "teamspeak.mariadb.fullname" . }} -u {{ .Values.mariadb.auth.username }} -p{{ .Values.mariadb.auth.password }} {{ .Values.mariadb.auth.database }} -e "SELECT 1;" || (echo "Database query failed" && exit 1)
+              echo "MariaDB database test passed!"
+          env:
+            - name: MYSQL_PWD
+              value: {{ .Values.mariadb.auth.password | quote }}
+      restartPolicy: Never
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- else }}
+  # No-op if MariaDB is disabled
+  template:
+    spec:
+      containers:
+        - name: noop
+          image: busybox:1.35
+          command: [ 'echo' ]
+          args: [ 'MariaDB test skipped (disabled)' ]
+      restartPolicy: Never
+  {{- end }}

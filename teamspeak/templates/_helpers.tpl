@@ -80,3 +80,10 @@ true
 true
 {{- end -}}
 {{- end -}}
+
+{{/*
+MariaDB fullname
+*/}}
+{{- define "teamspeak.mariadb.fullname" -}}
+{{- printf "%s-mariadb" (include "teamspeak.fullname" .) -}}
+{{- end -}}

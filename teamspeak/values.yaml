@@ -6,7 +6,7 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
-imagePullSecrets: []
+imagePullSecrets: [ ]
 
 nameOverride: ""
 fullnameOverride: ""
@@ -17,18 +17,18 @@ serviceAccount:
   # Automatically mount a ServiceAccount's API credentials?
   automount: true
   # Annotations to add to the service account
-  annotations: {}
+  annotations: { }
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-podAnnotations: {}
-podLabels: {}
+podAnnotations: { }
+podLabels: { }
 
-podSecurityContext: {}
+podSecurityContext: { }
 # fsGroup: 2000
 
-securityContext: {}
+securityContext: { }
 # capabilities:
 #   drop:
 #   - ALL
@@ -47,21 +47,31 @@ filetransfer:
 webquery:
   port: 10080
 
-# MariaDB subchart (optional)
-mysql:
+# Custom MariaDB implementation (optional)
+mariadb:
   enabled: false
+  image:
+    repository: mariadb
+    tag: "11.5"
   architecture: standalone
   auth:
-    rootPassword: ""
+    rootPassword: "rootpass"
     database: teamspeak
     username: ts
-    password: ""
+    password: "tspass"
   primary:
+    # MariaDB specific config (e.g., max_connections, etc.)
+    configuration: |
+      [mysqld]
+      max_connections=200
+      default_authentication_plugin=mysql_native_password
     persistence:
       enabled: true
       size: 8Gi
+      storageClass: ""
+      accessMode: ReadWriteOnce
 
-# Server configuration (tsserver.yaml content as multi-line string)
+# Server configuration base (common parts; database section templated in ConfigMap)
 serverConfig: |
   # Sample tsserver.yaml - customize as needed
   network:
@@ -69,17 +79,6 @@ serverConfig: |
     filetransfer_port: {{ .Values.filetransfer.port }}
     query_port: {{ .Values.webquery.port | default 10080 }}
     bind_ip: "0.0.0.0"
-  database:
-    type: "sqlite"
-    path: "/var/tsserver/database.db"
-  # For MariaDB (overrides if mysql.enabled):
-  # database:
-  #   type: "mariadb"
-  #   host: "{{ include "teamspeak.fullname" . }}-mariadb"
-  #   port: 3306
-  #   database: "teamspeak"
-  #   username: "ts"
-  #   password: "{{ .Values.mysql.auth.password }}"
   logging:
     level: "info"
     path: "/var/tsserver/logs"
@@ -100,12 +99,12 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
-  tls: []
+  tls: [ ]
   #  - secretName: chart-example-tls
   #    hosts:
   #      - chart-example.local
 
-resources: {}
+resources: { }
 # limits:
 #   cpu: 100m
 #   memory: 128Mi
@@ -172,7 +171,7 @@ networkPolicy:
   allowAll: true
 
 # Additional volumes and volumeMounts
-extraVolumes: []
-extraVolumeMounts: []
+extraVolumes: [ ]
+extraVolumeMounts: [ ]
 
 customer: "sidler2"
