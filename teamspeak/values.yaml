@@ -25,16 +25,12 @@ serviceAccount:
 podAnnotations: { }
 podLabels: { }
 
-podSecurityContext: { }
-# fsGroup: 2000
+podSecurityContext:
+  fsGroup: 1000
 
-securityContext: { }
-# capabilities:
-#   drop:
-#   - ALL
-# readOnlyRootFilesystem: true
-# runAsNonRoot: true
-# runAsUser: 1000
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
 
 service:
   type: LoadBalancer
@@ -70,8 +66,9 @@ mariadb:
       size: 8Gi
       storageClass: ""
       accessMode: ReadWriteOnce
+    replicas: 1
 
-# Accept license environment variable
+# Accept license via config
 licenseAccepted: true
 
 # Ingress for WebQuery (note: ServerQuery is telnet-based; consider TCP proxy or service exposure)
@@ -138,18 +135,17 @@ persistence:
   size: 8Gi
   mountPath: /var/tsserver
 
-# Init container for setup (generate config if needed, but using ConfigMap)
+# Init container for setup (setup directories and copy files)
 initContainer:
   enabled: true
+  image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
   command:
     - /bin/sh
     - -c
     - |
-      if [ ! -f /var/tsserver/tsserver.yaml ]; then
-        cp /config/tsserver.yaml /var/tsserver/tsserver.yaml
-        chown -R 1000:1000 /var/tsserver
-      fi
-      /tsserver --accept-license || true
+      mkdir -p /var/tsserver/{logs,crashdumps,sql}
+      cp -r /opt/tsserver/sql /var/tsserver/ || true
+      cp /config/tsserver.yaml /var/tsserver/tsserver.yaml
 
 # Network Policy
 networkPolicy:

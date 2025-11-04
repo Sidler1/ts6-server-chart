@@ -13,35 +13,14 @@ data:
 {{- end }}
 ---
 apiVersion: v1
-kind: ConfigMap
+kind: Secret
 metadata:
   name: {{ include "teamspeak.fullname" . }}-config
   labels:
 {{ include "teamspeak.labels" . | nindent 4 }}
+type: Opaque
 data:
-  tsserver.yaml: |-
-    # Sample tsserver.yaml - customize as needed
-    network:
-      voice_port: {{ .Values.voice.port }}
-      filetransfer_port: {{ .Values.filetransfer.port }}
-      query_port: {{ .Values.webquery.port | default 10080 }}
-      bind_ip: "0.0.0.0"
-    logging:
-      level: "info"
-      path: "/var/tsserver/logs"
-{{ if .Values.mariadb.enabled }}
-    database:
-      type: "mariadb"
-      host: {{ include "teamspeak.mariadb.fullname" . }}
-      port: 3306
-      database: {{ .Values.mariadb.auth.database | quote }}
-      username: {{ .Values.mariadb.auth.username | quote }}
-      password: {{ .Values.mariadb.auth.password | quote }}
-{{ else }}
-    database:
-      type: "sqlite"
-      path: "/var/tsserver/database.db"
-{{ end }}
+  tsserver.yaml: {{ include "teamspeak.serverConfig" . | b64enc | quote }}
 ---
 {{- if .Values.mariadb.enabled }}
 apiVersion: v1

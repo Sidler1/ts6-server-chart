@@ -24,15 +24,17 @@ spec:
       {{- if .Values.initContainer.enabled }}
       initContainers:
         - name: init-setup
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+          {{- with .Values.initContainer.command }}
           command:
-            {{- toYaml .Values.initContainer.command | nindent 12 }}
-          env:
-            - name: TSSERVER_LICENSE_ACCEPTED
-              value: {{ ternary "accept" "reject" .Values.licenseAccepted | quote }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            runAsUser: 0
           volumeMounts:
             - name: config
               mountPath: /config
+              readOnly: true
             - name: data
               mountPath: {{ .Values.persistence.mountPath }}
       {{- end }}
@@ -44,22 +46,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: TSSERVER_LICENSE_ACCEPTED
-              value: {{ ternary "accept" "reject" .Values.licenseAccepted | quote}}
-            {{- if .Values.mariadb.enabled }}
-            - name: TSSERVER_DB_HOST
-              value: {{ include "teamspeak.mariadb.fullname" . }}
-            - name: TSSERVER_DB_PORT
-              value: "3306"
-            - name: TSSERVER_DB_USER
-              value: {{ .Values.mariadb.auth.username }}
-            - name: TSSERVER_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "teamspeak.mariadb.fullname" . }}-secret
-                  key: mysql-password
-            - name: TSSERVER_DB_NAME
-              value: {{ .Values.mariadb.auth.database }}
-            {{- end }}
+              value: {{ ternary "accept" "reject" .Values.licenseAccepted | quote }}
           ports:
             - name: voice
               containerPort: {{ .Values.voice.port }}
@@ -70,14 +57,15 @@ spec:
             - name: webquery
               containerPort: {{ .Values.webquery.port }}
               protocol: TCP
-          {{- with .Values.livenessProbe }}
-          livenessProbe:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .Values.readinessProbe }}
-          readinessProbe:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
+  {{/*TODO: Reactivate those probes! */}}
+{{/*          {{- with .Values.livenessProbe }}*/}}
+{{/*          livenessProbe:*/}}
+{{/*            {{- toYaml . | nindent 12 }}*/}}
+{{/*          {{- end }}*/}}
+{{/*          {{- with .Values.readinessProbe }}*/}}
+{{/*          readinessProbe:*/}}
+{{/*            {{- toYaml . | nindent 12 }}*/}}
+{{/*          {{- end }}*/}}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
@@ -95,8 +83,9 @@ spec:
       {{- end }}
       volumes:
         - name: config
-          configMap:
-            name: {{ include "teamspeak.fullname" . }}-config
+          secret:
+            secretName: {{ include "teamspeak.fullname" . }}-config
+            defaultMode: 0644
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
