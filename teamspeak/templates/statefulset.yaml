@@ -57,7 +57,7 @@ spec:
             - name: webquery
               containerPort: {{ .Values.webquery.port }}
               protocol: TCP
-  {{/*TODO: Reactivate those probes! */}}
+{{/*TODO: Reactivate those probes! */}}
 {{/*          {{- with .Values.livenessProbe }}*/}}
 {{/*          livenessProbe:*/}}
 {{/*            {{- toYaml . | nindent 12 }}*/}}
