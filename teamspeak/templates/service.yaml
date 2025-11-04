@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "teamspeak.fullname" . }}
+  labels:
+{{ include "teamspeak.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.voice.port | default 9987 }}
+      targetPort: voice
+      protocol: UDP
+      name: voice
+    - port: {{ .Values.filetransfer.port | default 30033 }}
+      targetPort: filetransfer
+      protocol: TCP
+      name: filetransfer
+    - port: {{ .Values.webquery.port | default 10080 }}
+      targetPort: webquery
+      protocol: TCP
+      name: webquery
+  selector:
+{{ include "teamspeak.selectorLabels" . | nindent 4 }}
