@@ -1,6 +1,6 @@
 # TeamSpeak 6 Server Helm Chart
 
-[![Version](https://img.shields.io/github/tag/sidler2/ts6-server-chart.svg)](https://github.com/sidler2/ts6-server-chart/tags)
+[![Version](https://img.shields.io/github/tag/Sidler1/ts6-server-chart.svg)](https://github.com/sidler2/ts6-server-chart/tags)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/sidler2/ts6-server-chart/blob/main/LICENSE)
 [![Release](https://img.shields.io/helm/artifacthub/v/sidler2/teamspeak.svg)](https://artifacthub.io/packages/helm/sidler2/teamspeak)
 
