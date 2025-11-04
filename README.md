@@ -186,4 +186,4 @@ Apache 2.0 - see [LICENSE](LICENSE).
 - Based on TeamSpeak 6 Server docs.
 - Helm chart structure inspired by Bitnami patterns (customized, no dependencies).
 
-For issues or support: [@Sidler12 on X](https://x.com/Sidler12) [Mail](mailto:sidler1@sidler1.com).
+For issues or support: [@Sidler12 on X](https://x.com/Sidler12) or [Mail](mailto:sidler1@sidler1.com).
