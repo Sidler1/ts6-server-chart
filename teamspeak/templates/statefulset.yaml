@@ -24,12 +24,12 @@ spec:
       {{- if .Values.initContainer.enabled }}
       initContainers:
         - name: init-setup
-          image: {{ .Values.initContainer.image }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           command:
             {{- toYaml .Values.initContainer.command | nindent 12 }}
           env:
             - name: TSSERVER_LICENSE_ACCEPTED
-              value: "{{ ternary "accept" "reject" .Values.licenseAccepted | quote }}"
+              value: {{ ternary "accept" "reject" .Values.licenseAccepted | quote }}
           volumeMounts:
             - name: config
               mountPath: /config
@@ -44,7 +44,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: TSSERVER_LICENSE_ACCEPTED
-              value: "{{ ternary "accept" "reject" .Values.licenseAccepted | quote }}"
+              value: {{ ternary "accept" "reject" .Values.licenseAccepted | quote}}
             {{- if .Values.mariadb.enabled }}
             - name: TSSERVER_DB_HOST
               value: {{ include "teamspeak.mariadb.fullname" . }}

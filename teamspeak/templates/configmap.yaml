@@ -20,7 +20,15 @@ metadata:
 {{ include "teamspeak.labels" . | nindent 4 }}
 data:
   tsserver.yaml: |-
-{{ .Values.serverConfig | indent 4 }}
+    # Sample tsserver.yaml - customize as needed
+    network:
+      voice_port: {{ .Values.voice.port }}
+      filetransfer_port: {{ .Values.filetransfer.port }}
+      query_port: {{ .Values.webquery.port | default 10080 }}
+      bind_ip: "0.0.0.0"
+    logging:
+      level: "info"
+      path: "/var/tsserver/logs"
 {{ if .Values.mariadb.enabled }}
     database:
       type: "mariadb"

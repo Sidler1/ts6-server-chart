@@ -1,22 +1,97 @@
-1. Get the application URL by running these commands:
+# TeamSpeak 6 Server Helm Chart Notes
+
+Thank you for installing {{ .Release.Name }}!
+
+## Quick Start
+
+Your TeamSpeak 6 server is now running! 
+
+- **Release Name**: {{ .Release.Name }}
+- **Namespace**: {{ .Release.Namespace }}
+- **Full Application Name**: {{ include "teamspeak.fullname" . }}
+- **Customer**: {{ .Values.customer | default "not specified" }}
+
+### Accessing the Server
+
+The TeamSpeak server exposes the following ports via the Kubernetes Service `{{ include "teamspeak.fullname" . }}`:
+
+- **Voice (UDP)**: Port {{ .Values.voice.port }} (default: 9987) – Connect TeamSpeak clients here.
+- **File Transfer (TCP)**: Port {{ .Values.filetransfer.port }} (default: 30033).
+- **ServerQuery/WebQuery (TCP)**: Port {{ .Values.webquery.port }} (default: 10080) – Use for admin queries (telnet or TS3 client query).
+
+#### Service Type: {{ .Values.service.type | default "LoadBalancer" }}
+
+{{- if eq .Values.service.type "LoadBalancer" }}
+- Get the external IP: `kubectl get svc {{ include "teamspeak.fullname" . }}`
+- Connect to: `<EXTERNAL-IP>:{{ .Values.voice.port }}` (UDP for voice).
+{{- else if eq .Values.service.type "NodePort" }}
+- Get NodePorts: `kubectl get svc {{ include "teamspeak.fullname" . }}`
+- Connect to: `<NODE-IP>:<NODE-PORT>` (e.g., for voice: UDP {{ add 30000 .Values.voice.port }}).
+{{- else }}
+- Access within the cluster: `<POD-IP>:{{ .Values.voice.port }}` (use `kubectl get pods` to find POD-IP).
+{{- end }}
+
 {{- if .Values.ingress.enabled }}
-{{- range $host := .Values.ingress.hosts }}
-  {{- range .paths }}
-  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
-  {{- end }}
+### Ingress Access
+- WebQuery is exposed via Ingress at: `http(s)://{{ index .Values.ingress.hosts 0 "host" }}{{ index (index .Values.ingress.hosts 0 "paths") 0 "path" }}` (TCP passthrough; requires ingress controller support).
+- Check Ingress status: `kubectl get ingress {{ include "teamspeak.fullname" . }}`
 {{- end }}
-{{- else if contains "NodePort" .Values.service.type }}
-  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "teamspeak.fullname" . }})
-  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
-  echo http://$NODE_IP:$NODE_PORT
-{{- else if contains "LoadBalancer" .Values.service.type }}
-     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-           You can watch its status by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "teamspeak.fullname" . }}'
-  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "teamspeak.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
-  echo http://$SERVICE_IP:{{ .Values.service.port }}
-{{- else if contains "ClusterIP" .Values.service.type }}
-  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "teamspeak.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
-  export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
-  echo "Visit http://127.0.0.1:8080 to use your application"
-  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+## Database
+
+{{- if .Values.mariadb.enabled }}
+- **Backend**: MariaDB (enabled).
+- Service: `{{ include "teamspeak.mariadb.fullname" . }}` on port 3306.
+- Database: {{ .Values.mariadb.auth.database }} | User: {{ .Values.mariadb.auth.username }}.
+- Connect: `mariadb -h {{ include "teamspeak.mariadb.fullname" . }} -u {{ .Values.mariadb.auth.username }} -p{{ .Values.mariadb.auth.password }} {{ .Values.mariadb.auth.database }}`.
+{{- else }}
+- **Backend**: SQLite (default, file-based at `/var/tsserver/database.db`).
 {{- end }}
+
+## Persistence
+
+- Data stored in PVC `{{ include "teamspeak.fullname" . }}-data-0` ({{ .Values.persistence.size }} {{ .Values.persistence.accessMode }}).
+- Mount path: {{ .Values.persistence.mountPath }}.
+
+## Monitoring & Troubleshooting
+
+- **Pods**: `kubectl get sts {{ include "teamspeak.fullname" . }} -n {{ .Release.Namespace }}`
+- **Logs**: `kubectl logs -f sts/{{ include "teamspeak.fullname" . }} -n {{ .Release.Namespace }}`
+- **Describe**: `kubectl describe sts {{ include "teamspeak.fullname" . }} -n {{ .Release.Namespace }}`
+- **Port Forward** (for local testing): 
+  ```
+  kubectl port-forward svc/{{ include "teamspeak.fullname" . }} 9987:{{ .Values.voice.port }}/udp 10080:{{ .Values.webquery.port }} -n {{ .Release.Namespace }}
+  ```
+  Then connect to `localhost:9987` (UDP).
+
+- **Health Checks**: Liveness/Readiness probes are configured for process and port checks.
+- **Autoscaling**: {{- if .Values.autoscaling.enabled }}Enabled (min: {{ .Values.autoscaling.minReplicas }}, max: {{ .Values.autoscaling.maxReplicas }}){{ else }}Disabled (enable via values){{- end }}.
+- **Network Policy**: {{- if .Values.networkPolicy.enabled }}Enabled ({{- if .Values.networkPolicy.allowAll }}allow-all{{ else }}restricted ports{{- end }}){{ else }}Disabled{{- end }}.
+
+## Configuration
+
+- Server config: Mounted from ConfigMap `{{ include "teamspeak.fullname" . }}-config` (`tsserver.yaml`).
+- Edit via values.yaml and upgrade: `helm upgrade {{ .Release.Name }} . -n {{ .Release.Namespace }}`.
+- License: Accepted ({{- if .Values.licenseAccepted }}yes{{ else }}no – review env `TSSERVER_LICENSE_ACCEPTED`{{- end }}).
+
+## Next Steps
+
+1. Connect a TeamSpeak 6 client to the voice port.
+2. Use ServerQuery to create an admin account: `telnet <IP> {{ .Values.webquery.port }}` then `serverinfo` or `login serveradmin <password>`.
+3. For production: 
+   - Set secure passwords (e.g., for MariaDB).
+   - Enable Ingress with TLS.
+   - Tune resources and probes.
+   - Run tests: `helm test {{ .Release.Name }} -n {{ .Release.Namespace }}`.
+
+## Resources
+
+- TeamSpeak 6 Docs: https://teamspeak.com/en/downloads/#teamspeak-6-server
+- Helm Docs: https://helm.sh/docs/
+- Kubernetes: https://kubernetes.io/docs/
+
+{{- if contains "UNINSTALLED" (default "RELEASED" .Release.Status) }}
+To uninstall: `helm uninstall {{ .Release.Name }} -n {{ .Release.Namespace }}`
+{{- end }}
+
+Enjoy your TeamSpeak server! 🎤
