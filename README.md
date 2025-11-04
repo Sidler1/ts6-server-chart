@@ -2,7 +2,7 @@
 
 [![Version](https://img.shields.io/github/tag/Sidler1/ts6-server-chart.svg)](https://github.com/sidler2/ts6-server-chart/tags)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/sidler2/ts6-server-chart/blob/main/LICENSE)
-[![Release](https://img.shields.io/helm/artifacthub/v/sidler2/teamspeak.svg)](https://artifacthub.io/packages/helm/sidler2/teamspeak)
+[![Release](https://img.shields.io/helm/artifacthub/v/sidler1/teamspeak.svg)](https://artifacthub.io/packages/helm/sidler2/teamspeak)
 
 A Kubernetes Helm chart for deploying TeamSpeak 6 Server with optional MariaDB persistence, ingress support,
 autoscaling, and network policies.
