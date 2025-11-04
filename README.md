@@ -1,8 +1,8 @@
 # TeamSpeak 6 Server Helm Chart
 
-[![Version](https://img.shields.io/github/tag/Sidler1/ts6-server-chart.svg)](https://github.com/sidler2/ts6-server-chart/tags)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/sidler2/ts6-server-chart/blob/main/LICENSE)
-[![Release](https://img.shields.io/helm/artifacthub/v/sidler1/teamspeak.svg)](https://artifacthub.io/packages/helm/sidler2/teamspeak)
+[![Version](https://img.shields.io/github/tag/Sidler1/ts6-server-chart.svg)](https://github.com/sidler1/ts6-server-chart/tags)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/sidler1/ts6-server-chart/blob/main/LICENSE)
+[![Release](https://img.shields.io/helm/artifacthub/v/sidler1/teamspeak.svg)](https://artifacthub.io/packages/helm/sidler1/teamspeak)
 
 A Kubernetes Helm chart for deploying TeamSpeak 6 Server with optional MariaDB persistence, ingress support,
 autoscaling, and network policies.
@@ -47,7 +47,7 @@ Add the repo (if hosted) and install:
 
 ```bash
 # Add repository (replace with actual repo URL if published)
-helm repo add sidler2 https://sidler2.github.io/teamspeak-helm-chart
+helm repo add sidler1 https://sidler1.github.io/teamspeak-helm-chart
 helm repo update
 
 # Install the chart
@@ -90,7 +90,7 @@ Key values in `values.yaml`:
 | `networkPolicy.enabled` | Enable NetworkPolicies                         | `false`                              |
 | `ingress.enabled`       | Enable Ingress for query                       | `false`                              |
 | `licenseAccepted`       | Accept EULA in config                          | `true`                               |
-| `customer`              | Custom label                                   | `"sidler2"`                          |
+| `customer`              | Custom label                                   | `"sidler1"`                          |
 
 For full config, see [values.yaml](teamspeak/values.yaml).
 
@@ -186,4 +186,4 @@ Apache 2.0 - see [LICENSE](LICENSE).
 - Based on TeamSpeak 6 Server docs.
 - Helm chart structure inspired by Bitnami patterns (customized, no dependencies).
 
-For issues or support: [@Sidler12 on X](https://x.com/Sidler12) [Mail](mailto:sidler2@sidler2.com).
+For issues or support: [@Sidler12 on X](https://x.com/Sidler12) [Mail](mailto:sidler1@sidler1.com).
