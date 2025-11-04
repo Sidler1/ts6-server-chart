@@ -3,7 +3,17 @@ entries:
   teamspeak:
   - apiVersion: v2
     appVersion: v6.0.0-beta7
-    created: "2025-11-04T16:52:47.070956473+01:00"
+    created: "2025-11-04T17:27:22.440178683+01:00"
+    description: Running a Teamspeak 6 Server in Kubernetes
+    digest: ee6700c39c3e80ef7ba6fda640f4b66938556e52a7f2cf22dc387392f9f9ad86
+    name: teamspeak
+    type: application
+    urls:
+    - teamspeak-1.1.0.tgz
+    version: 1.1.0
+  - apiVersion: v2
+    appVersion: v6.0.0-beta7
+    created: "2025-11-04T17:27:22.439645428+01:00"
     description: Running a Teamspeak 6 Server in Kubernetes
     digest: 110cb3ab03828be9e29d8297a6846746c4cd2d42298f67257c15d0eb00d82f54
     name: teamspeak
@@ -11,4 +21,4 @@ entries:
     urls:
     - teamspeak-1.0.0.tgz
     version: 1.0.0
-generated: "2025-11-04T16:52:47.070306056+01:00"
+generated: "2025-11-04T17:27:22.438709411+01:00"
