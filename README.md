@@ -2,7 +2,7 @@
 
 [![Version](https://img.shields.io/github/tag/Sidler1/ts6-server-chart.svg)](https://github.com/sidler1/ts6-server-chart/tags)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/sidler1/ts6-server-chart/blob/main/LICENSE)
-[![Release](https://img.shields.io/helm/artifacthub/v/sidler1/teamspeak.svg)](https://artifacthub.io/packages/helm/sidler1/teamspeak)
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/teamspeak)](https://artifacthub.io/packages/search?repo=teamspeak)
 
 A Kubernetes Helm chart for deploying TeamSpeak 6 Server with optional MariaDB persistence, ingress support,
 autoscaling, and network policies.
@@ -16,7 +16,6 @@ This Helm chart deploys a stateful TeamSpeak 6 Server instance on Kubernetes. It
 - **ConfigMap/Secret** for server configuration (`tsserver.yaml`).
 - **Optional MariaDB** StatefulSet for external database (SQLite by default).
 - **Ingress** for secure query access (HTTP/TCP passthrough).
-- **Horizontal Pod Autoscaler (HPA)** for scaling based on CPU.
 - **NetworkPolicy** for traffic control.
 - **Init Container** for setup (directory creation, config copy).
 - **NOTES.txt** with post-install instructions.
@@ -28,7 +27,6 @@ Designed for production-like setups, with configurable persistence via PVC.
 - **Persistent Storage**: Mounts `/var/tsserver` for database, logs, and config.
 - **Database Options**: SQLite (default) or MariaDB (optional).
 - **Security**: Runs as non-root (UID 1000), fsGroup for volume ownership, secrets for credentials.
-- **Scalability**: HPA support; single-replica by default (StatefulSet-ready).
 - **Observability**: Configurable resources, probes, and logs.
 - **Customization**: Full `tsserver.yaml` templating via helpers.
 - **Helm Best Practices**: Labels, selectors, hooks for tests.
@@ -130,28 +128,6 @@ helm upgrade my-teamspeak . -n teamspeak -f custom-values.yaml
 
 - **SQLite**: File-based at `/var/tsserver/sql/teamspeak`.
 - **MariaDB**: Separate StatefulSet; connect via `mariadb -h my-teamspeak-mariadb -u ts -p`.
-
-### Scaling
-
-Enable HPA in values and apply:
-
-```bash
-kubectl apply -f templates/hpa.yaml  # Or via helm upgrade
-```
-
-## Testing
-
-Run Helm tests:
-
-```bash
-helm test my-teamspeak -n teamspeak
-```
-
-Tests include:
-
-- Network connectivity (TCP/UDP ports, optional MariaDB).
-- Database access (if MariaDB enabled).
-- ConfigMap/Secret validation.
 
 ## Uninstall
 
