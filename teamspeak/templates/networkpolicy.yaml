@@ -1,0 +1,32 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "teamspeak.fullname" . }}-allow
+  labels:
+{{ include "teamspeak.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+{{ include "teamspeak.selectorLabels" . | nindent 6 }}
+  policyTypes:
+  - Ingress
+  - Egress
+  {{- if .Values.networkPolicy.allowAll }}
+  ingress:
+  - {}
+  egress:
+  - {}
+  {{- else }}
+  # Customize rules here, e.g., allow UDP 9987 from anywhere, TCP 30033/10080 from specific
+  ingress:
+    - from: []
+      ports:
+        - protocol: UDP
+          port: {{ .Values.voice.port }}
+        - protocol: TCP
+          port: {{ .Values.filetransfer.port }}
+        - protocol: TCP
+          port: {{ .Values.webquery.port }}
+  {{- end }}
+{{- end }}

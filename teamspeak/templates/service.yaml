@@ -5,19 +5,41 @@ metadata:
   labels:
 {{ include "teamspeak.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.service.type | default "ClusterIP" }}
+  type: {{ .Values.service.type }}
+  {{- if .Values.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
+  {{- end }}
   ports:
-    - port: {{ .Values.voice.port | default 9987 }}
+    - port: {{ .Values.voice.port }}
       targetPort: voice
       protocol: UDP
       name: voice
-    - port: {{ .Values.filetransfer.port | default 30033 }}
+    - port: {{ .Values.filetransfer.port }}
       targetPort: filetransfer
       protocol: TCP
       name: filetransfer
-    - port: {{ .Values.webquery.port | default 10080 }}
+    - port: {{ .Values.webquery.port }}
       targetPort: webquery
       protocol: TCP
       name: webquery
   selector:
 {{ include "teamspeak.selectorLabels" . | nindent 4 }}
+---
+{{- if .Values.mysql.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "teamspeak.fullname" . }}-mariadb
+  labels:
+{{ include "teamspeak.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3306
+      targetPort: mysql
+      protocol: TCP
+      name: mysql
+  selector:
+    app.kubernetes.io/name: mariadb
+    app.kubernetes.io/instance: {{ .Release.Name }}-mariadb
+{{- end }}

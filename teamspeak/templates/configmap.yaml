@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "teamspeak.fullname" . }}-config
+  labels:
+{{ include "teamspeak.labels" . | nindent 4 }}
+data:
+  tsserver.yaml: |
+{{ .Values.serverConfig | indent 4 }}
+---
+{{- if .Values.mysql.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "teamspeak.fullname" . }}-db-secret
+  labels:
+{{ include "teamspeak.labels" . | nindent 4 }}
+type: Opaque
+data:
+  mysql-password: {{ .Values.mysql.auth.password | b64enc | quote }}
+{{- end }}

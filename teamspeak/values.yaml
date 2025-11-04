@@ -1,16 +1,12 @@
-# Default values for teamspeak.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
 replicaCount: 1
 
 image:
   repository: teamspeaksystems/teamspeak6-server
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "v6.0.0-beta7"
+  tag: ""
 
-imagePullSecrets: [ ]
+imagePullSecrets: []
 
 nameOverride: ""
 fullnameOverride: ""
@@ -21,18 +17,18 @@ serviceAccount:
   # Automatically mount a ServiceAccount's API credentials?
   automount: true
   # Annotations to add to the service account
-  annotations: { }
+  annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-podAnnotations: { }
-podLabels: { }
+podAnnotations: {}
+podLabels: {}
 
-podSecurityContext: { }
+podSecurityContext: {}
 # fsGroup: 2000
 
-securityContext: { }
+securityContext: {}
 # capabilities:
 #   drop:
 #   - ALL
@@ -42,6 +38,8 @@ securityContext: { }
 
 service:
   type: LoadBalancer
+  # LoadBalancerIP: ""
+
 voice:
   port: 9987
 filetransfer:
@@ -49,25 +47,65 @@ filetransfer:
 webquery:
   port: 10080
 
+# MariaDB subchart (optional)
+mysql:
+  enabled: false
+  architecture: standalone
+  auth:
+    rootPassword: ""
+    database: teamspeak
+    username: ts
+    password: ""
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+
+# Server configuration (tsserver.yaml content as multi-line string)
+serverConfig: |
+  # Sample tsserver.yaml - customize as needed
+  network:
+    voice_port: {{ .Values.voice.port }}
+    filetransfer_port: {{ .Values.filetransfer.port }}
+    query_port: {{ .Values.webquery.port | default 10080 }}
+    bind_ip: "0.0.0.0"
+  database:
+    type: "sqlite"
+    path: "/var/tsserver/database.db"
+  # For MariaDB (overrides if mysql.enabled):
+  # database:
+  #   type: "mariadb"
+  #   host: "{{ include "teamspeak.fullname" . }}-mariadb"
+  #   port: 3306
+  #   database: "teamspeak"
+  #   username: "ts"
+  #   password: "{{ .Values.mysql.auth.password }}"
+  logging:
+    level: "info"
+    path: "/var/tsserver/logs"
+
+# Accept license environment variable
+licenseAccepted: true
+
+# Ingress for WebQuery (note: ServerQuery is telnet-based; consider TCP proxy or service exposure)
 ingress:
   enabled: false
   className: ""
-  annotations: { }
+  annotations:
+    # For TCP support in ingress-nginx: kubernetes.io/ingress.class: "nginx"
+    # nginx.ingress.kubernetes.io/backend-protocol: "TCP"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
   hosts:
     - host: chart-example.local
       paths:
         - path: /
-          pathType: ImplementationSpecific
-  tls: [ ]
+          pathType: Prefix
+  tls: []
   #  - secretName: chart-example-tls
   #    hosts:
   #      - chart-example.local
 
-resources: { }
-# We recommend not to specify default resources and to leave this as a conscious
-# choice for the user. This also increases chances charts run on environments with little
-# resources, such as Minikube. If you do want to specify resources, uncomment the following
-# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+resources: {}
 # limits:
 #   cpu: 100m
 #   memory: 128Mi
@@ -75,18 +113,28 @@ resources: { }
 #   cpu: 100m
 #   memory: 128Mi
 
-# Liveness and readiness probes. For TeamSpeak, consider using tcpSocket on the voice port
-# or an exec probe checking the server process.
+# Improved probes using exec to check tsserver process
 livenessProbe:
-  tcpSocket:
-    port: voice
+  exec:
+    command:
+      - /bin/sh
+      - -c
+      - ps aux | grep tsserver || exit 1
   initialDelaySeconds: 60
   periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
 readinessProbe:
-  tcpSocket:
-    port: voice
+  exec:
+    command:
+      - /bin/sh
+      - -c
+      - nc -z localhost {{ .Values.voice.port }} || exit 1
   initialDelaySeconds: 30
   periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
 
 autoscaling:
   enabled: false
@@ -95,33 +143,36 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
-# Persistence for TeamSpeak server data (database, files, etc.)
+# Persistence for TeamSpeak server data
 persistence:
   enabled: true
-  # storageClass to use (leave empty for default)
   storageClass: ""
   accessMode: ReadWriteOnce
   size: 8Gi
-  # Path inside the container to mount the volume
   mountPath: /var/tsserver
 
-# Additional volumes on the output Deployment definition.
-volumes: [ ]
-# - name: foo
-#   secret:
-#     secretName: mysecret
-#     optional: false
+# Init container for setup (generate config if needed, but using ConfigMap)
+initContainer:
+  enabled: true
+  image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+  command:
+    - /bin/sh
+    - -c
+    - |
+      if [ ! -f /var/tsserver/tsserver.yaml ]; then
+        cp /config/tsserver.yaml /var/tsserver/tsserver.yaml
+        chown -R 1000:1000 /var/tsserver
+      fi
+      /tsserver --accept-license || true
 
-# Additional volumeMounts on the output Deployment definition.
-volumeMounts: [ ]
-# - name: foo
-#   mountPath: "/etc/foo"
-#   readOnly: true
+# Network Policy
+networkPolicy:
+  enabled: false
+  # Allow all traffic (adjust for production)
+  allowAll: true
 
-nodeSelector: { }
-
-tolerations: [ ]
-
-affinity: { }
+# Additional volumes and volumeMounts
+extraVolumes: []
+extraVolumeMounts: []
 
 customer: "sidler2"
